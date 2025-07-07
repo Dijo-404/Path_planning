@@ -5,6 +5,8 @@ from shapely.ops import transform as shapely_transform
 import pyproj
 
 ##################################################################################################
+
+
 def parse_kml_polygon(kml_file):
     """
     Parse the first Polygon in a KML file and return a list of (lon, lat) tuples.
@@ -31,6 +33,8 @@ def parse_kml_polygon(kml_file):
         raise ValueError("Polygon must have at least 3 coordinates.")
     return coord_list
 ##################################################################################################
+
+
 def get_utm_crs(lat, lon):
     """
     Return appropriate UTM CRS string for a given latitude and longitude.
@@ -41,6 +45,8 @@ def get_utm_crs(lat, lon):
     else:
         return f"EPSG:{32700 + zone_number}"
 ##################################################################################################
+
+
 def generate_sweep_waypoints(polygon_coords, spacing, waypoint_interval, altitude):
     """
     Generate a horizontal sweep (lawnmower) pattern within the polygon.
@@ -54,8 +60,10 @@ def generate_sweep_waypoints(polygon_coords, spacing, waypoint_interval, altitud
         raise ValueError("Invalid polygon geometry.")
     centroid = poly_lonlat.centroid
     utm_crs = get_utm_crs(centroid.y, centroid.x)
-    project_to_utm = pyproj.Transformer.from_crs("EPSG:4326", utm_crs, always_xy=True).transform
-    project_to_latlon = pyproj.Transformer.from_crs(utm_crs, "EPSG:4326", always_xy=True).transform
+    project_to_utm = pyproj.Transformer.from_crs(
+        "EPSG:4326", utm_crs, always_xy=True).transform
+    project_to_latlon = pyproj.Transformer.from_crs(
+        utm_crs, "EPSG:4326", always_xy=True).transform
     poly_utm = shapely_transform(project_to_utm, poly_lonlat)
     minx, miny, maxx, maxy = poly_utm.bounds
     y = miny
@@ -88,6 +96,8 @@ def generate_sweep_waypoints(polygon_coords, spacing, waypoint_interval, altitud
         reverse = not reverse
     return waypoints
 ##################################################################################################
+
+
 def write_kml_waypoints(output_file, waypoints):
     """
     Write waypoints to a KML file as a single LineString.
@@ -111,17 +121,28 @@ def write_kml_waypoints(output_file, waypoints):
     tree.write(output_file, encoding="utf-8", xml_declaration=True)
     print(f"KML flight path written to {output_file}")
 ##################################################################################################
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Generate horizontal sweep flight path from KML polygon.")
-    parser.add_argument("input_kml", help="Input KML file containing a Polygon definition")
-    parser.add_argument("output_kml", help="Output KML file for the generated flight path")
-    parser.add_argument("--spacing", type=float, default=7.0, help="Spacing between sweep lines in meters (default: 20)")
-    parser.add_argument("--waypoint_interval", type=float, default=10.0, help="Distance between waypoints along sweep line in meters (default: 10)")
-    parser.add_argument("--altitude", type=float, default=20.0, help="Flight altitude in meters (default: 50)")
+    parser = argparse.ArgumentParser(
+        description="Generate horizontal sweep flight path from KML polygon.")
+    parser.add_argument(
+        "input_kml", help="Input KML file containing a Polygon definition")
+    parser.add_argument(
+        "output_kml", help="Output KML file for the generated flight path")
+    parser.add_argument("--spacing", type=float, default=7.0,
+                        help="Spacing between sweep lines in meters (default: 20)")
+    parser.add_argument("--waypoint_interval", type=float, default=10.0,
+                        help="Distance between waypoints along sweep line in meters (default: 10)")
+    parser.add_argument("--altitude", type=float, default=20.0,
+                        help="Flight altitude in meters (default: 50)")
     args = parser.parse_args()
     polygon_coords = parse_kml_polygon(args.input_kml)
-    waypoints = generate_sweep_waypoints(polygon_coords, args.spacing, args.waypoint_interval, args.altitude)
+    waypoints = generate_sweep_waypoints(
+        polygon_coords, args.spacing, args.waypoint_interval, args.altitude)
     write_kml_waypoints(args.output_kml, waypoints)
+
+
 ##################################################################################################
 if __name__ == "__main__":
     main()
